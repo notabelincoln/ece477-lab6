@@ -4,33 +4,34 @@
 #include <stdio.h>
 #include <math.h>
 #include <avr/sleep.h>
+#define F_CPU 8000000UL
+#include <util/delay.h>
+#include <string.h>
 
-void init_pwm(void);
+int serial_putchar(char, FILE *);
+int serial_getchar(FILE *);
+static FILE serial_stream = FDEV_SETUP_STREAM (serial_putchar, serial_getchar, _FDEV_SETUP_RW);
+
+void init_serial(void);
+void init_adc(void);
+int read_adc(void);
+
 void update_clock_speed(void);
-void set_baud_rate(void);
-
-//This code is distributed with no warranty expressed or implied.
-//It does not contain any known bugs, but has not been tested.  
-//What it is intended to do is use the first two bytes of eeprom
-//as an offset and direction for adjusting the internal oscillator
-//The first byte is an unsigned byte that is the amount to adjust 
-//the OSCCAL register.  The next byte will be 0 or 1 depending on 
-//whether the adjustment should be positive (0) or negative (1).
-//The value 0xff is intentionally avoided to distinguish unprogrammed
-//eeprom locations.
-
-//main first calls update_clock_speed to make the adjustments to
-//the oscillator calibration and then calls init_pwm to set up 
-//a 100Hz 50% duty cycle square wave on OC1A (pin 15 on the 28 pin 
-//DIP package).
 
 
 int main()
-{
-	update_clock_speed();  //adjust OSCCAL
-	init_pwm();            //set up hardware PWM
-	while(1);              //literally nothing left to do
+{ char buffer[100]="notStart";
+  update_clock_speed();  //adjust OSCCAL
+  init_serial(); 
+  init_adc();  
+  _delay_ms(1000); //let serial work itself out
+  while(strncmp("Start",buffer,strlen("Start"))!=0) fgets(buffer,100,stdin);
+  while(1) //raspberry pi controls reset line
+  {
+    printf("%d\n",read_adc());
+  }    
 }
+
 
 //read the first two bytes of eeprom, if they have been programmed
 //use the first byte as an offset for adjusting OSCCAL and the second as
@@ -39,44 +40,64 @@ int main()
 // adjust the oscillator beyond safe operating bounds.
 void update_clock_speed(void)
 {
-	char temp;
-	temp=eeprom_read_byte((void *)1); //read oscillator offset sign 
-	//0 is positive 1 is  negative
-	//erased reads as ff (so avoid that)
-	if(temp==0||temp==1)      //if sign is invalid, don't change oscillator
-	{
-		if(temp==0)
-		{
-			temp=eeprom_read_byte((void *)0);
-			if(temp != 0xff) OSCCAL+=temp;
-		}
-		else
-		{
-			temp=eeprom_read_byte((void *)0);
-			if(temp!=0xff) OSCCAL -=temp;
-		}
-	}
+  char temp;
+  temp=eeprom_read_byte((void *)1); //read oscillator offset sign 
+                                    //0 is positive 1 is  negative
+                                    //erased reads as ff (so avoid that)
+  if(temp==0||temp==1)      //if sign is invalid, don't change oscillator
+  {
+      if(temp==0)
+          {
+             temp=eeprom_read_byte((void *)0);
+                 if(temp != 0xff) OSCCAL+=temp;
+          }
+          else
+          {
+             temp=eeprom_read_byte((void *)0);
+                 if(temp!=0xff) OSCCAL -=temp;
+          }
+  }
 }
 
-
-void init_pwm(void)
+/* Initializes AVR USART for 9600 baud (assuming 8MHz clock) */
+/* 8MHz/(16*(51+1)) = 9615 about 0.2% error                  */
+void init_serial(void)
 {
-	// **************************************************************
-	// ***   Timer 1                                                *
-	// **************************************************************
+   UBRR0H=0;
+   UBRR0L=51; // 9600 BAUD FOR 1MHZ SYSTEM CLOCK
+   UCSR0A=0;
+   UCSR0C= (1<<USBS0)|(3<<UCSZ00) ;  // 8 BIT NO PARITY 2 STOP
+   UCSR0B=(1<<RXEN0)|(1<<TXEN0)  ; //ENABLE TX AND RX ALSO 8 BIT
+   stdin=&serial_stream;
+   stdout=&serial_stream;
 
-	DDRB |= (1<<PB1);  //set OC1A as an output
-	OCR1A=19999;    //set initial compare at 50%
-	ICR1=39999U; // 8 MHz /40000/2 = PWM frequency = 100 Hz
-	TCCR1A = (1<<COM1A1); //zeros in COM1B1,COM1B0,WGM11,WGM10  
-	//internal clock, no prescaler , PWM mode 8
-	TCCR1B = (1<<WGM13) | (1<<CS10);
-}
-
-void set_baud_rate(void)
+}   
+//simplest possible putchar, waits until UDR is empty and puts character
+int serial_putchar(char val, FILE * fp)
 {
-		UCSR0A &= ~(0x02); // set U2X0 register to 0
-		UBRR0L = 0x35;
-		UBRR0H = 0x00;
+  while((UCSR0A&(1<<UDRE0)) == 0); //wait until empty 
+   UDR0 = val;
+   return 0;
 }
 
+//simplest possible getchar, waits until a char is available and reads it
+//note:1) it is a blocking read (will wait forever for a char)
+//note:2) if multiple characters come in and are not read, they will be lost
+int serial_getchar(FILE * fp)
+{
+   while((UCSR0A&(1<<RXC0)) == 0);  //WAIT FOR CHAR
+   return UDR0;
+}     
+void init_adc(void)
+{
+	ADMUX = (3<<REFS0) | 8; //temperature sensor 1.1V ref
+	ADCSRA = (1<<ADEN) | (6<<ADPS0); // enable ADC, prescaler=64
+	ADCSRB = 0;
+	DIDR0 = 0;
+} 
+int read_adc(void)
+{
+    ADCSRA |= (1<<ADSC);
+    while(ADCSRA & (1<<ADSC)); //wait for coversion
+    return ADC;
+} 
