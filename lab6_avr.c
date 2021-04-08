@@ -28,7 +28,7 @@ int main()
   while(strncmp("Start",buffer,strlen("Start"))!=0) fgets(buffer,100,stdin);
   while(1) //raspberry pi controls reset line
   {
-    printf("%d\n",read_adc());
+    printf("The power supply voltage is %d\n",read_adc());
   }    
 }
 
