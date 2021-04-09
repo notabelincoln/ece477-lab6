@@ -33,7 +33,7 @@ int main()
 	while(1) //raspberry pi controls reset line
 	{
 		railv = (1.1*1023*10000)/read_adc();
-		printf("The power rail is approximately %u\.%u\n\r",railv/10000,railv%10000);
+		printf("The power rail is approximately %u\.%uV\n\r",railv/10000,railv%10000);
 		_delay_ms(1000);
 	}    
 }
