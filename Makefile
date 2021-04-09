@@ -1,7 +1,6 @@
 # GCC variables
 CC = gcc
 CFLAGS = -g -O2 -Wall
-LFLAGS = -lwiringPi
 AVRFLAGS = -O3
 
 all:	avr rpi
@@ -10,13 +9,13 @@ avr: fuse lab6_avr lab6_avr.hex flash
 rpi: lab6a lab6b
 
 lab6a:	lab6a.o
-	$(CC) $(LFLAGS) -o lab6a lab6a.o
+	$(CC) -o lab6a lab6a.o
 
 lab6a.o:	lab6a.c
 	$(CC) $(CFLAGS) -c lab6a.c
 
 lab6b:	lab6b.o
-	$(CC) $(LFLAGS) -o lab6b lab6b.o
+	$(CC) -o lab6b lab6b.o
 
 lab6b.o:	lab6b.c
 	$(CC) $(CFLAGS) -c lab6b.c
