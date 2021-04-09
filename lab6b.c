@@ -14,11 +14,18 @@ int main(int argc, char * argv[])
 	FILE *serial_in;
 	FILE *disk_out;
 	int fdserial, fdscan;
+	int i;
 	float railv;
 	char buffer[100];
 	char strfloat[16];
 	char *filename = "./rail_voltages.dat";
 	char debug;
+
+	debug = 0; // check if debug flag is enabled
+	for (i = 0; i < argc; i++) {
+		if (!(strcmp("debug",argv[i])))
+			debug = 1;
+	}
 
 	fdserial=init(); // initialize serial port
 	if(fdserial <1)
@@ -50,8 +57,11 @@ int main(int argc, char * argv[])
 			exit(errno);
 
 		}
-		printf("%s - %f\n",buffer,railv);
-		fflush(stdout);
+
+		if (debug) {
+			printf("%s - %f\n",buffer,railv);
+			fflush(stdout);
+		}
 		memset(buffer,0,100);
 
 		sprintf(strfloat, "%.4f\n", railv); // convert float to string
