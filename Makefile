@@ -2,6 +2,7 @@
 CC = gcc
 CFLAGS = -g -O2 -Wall
 LFLAGS = -lwiringPi
+AVRFLAGS = -O3
 
 all:	avr rpi
 
@@ -22,10 +23,13 @@ lab6b.o:	lab6b.c
 
 # Compile avr code and flash it to the board
 fuse: avrdude_gpio.conf
-	avrdude -C ./avrdude_gpio.conf -c pi_1 -p m88p -U lfuse:w:0xe2:m -U hfuse:w:0xdf:m -U efuse:w:0xf9:m -U eeprom:w:0x04,0x01:m
+	avrdude -C ./avrdude_gpio.conf -c pi_1 -p m88p -U lfuse:w:0xe2:m -U hfuse:w:0xdf:m -U efuse:w:0xf9:m
+
+eeprom:
+	avrdude -C ./avrdude_gpio.conf -c pi_1 -p m88p -U eeprom:w:0x04,0x01:m
 
 lab6_avr: lab6_avr.c
-	avr-gcc -mmcu=atmega88pa lab6_avr.c -o lab6_avr
+	avr-gcc -mmcu=atmega88pa $(AVRFLAGS) lab6_avr.c -o lab6_avr
 
 lab6_avr.hex: lab6_avr
 	avr-objcopy -j .text -j .data -O ihex lab6_avr lab6_avr.hex
