@@ -18,30 +18,42 @@ int main(int argc, char * argv[])
 	char buffer[100];
 	char strfloat[16];
 	char *filename = "./rail_voltages.dat";
+	char debug;
 
-	fdserial=init();
-	if(fdserial <1) exit(0);
+	fdserial=init(); // initialize serial port
+	if(fdserial <1)
+		exit(0);
 	serial_out=fdopen(fdserial,"w");
 	serial_in=fdopen(fdserial,"r");
-	if(serial_out==NULL || serial_in==NULL) printf("fdopen failed \n"),exit(0);
-	disk_out=fopen(filename,"a");
+
+	if(serial_out==NULL || serial_in==NULL) {
+		printf("fdopen failed \n");
+		exit(0);
+	}
+
+	disk_out=fopen(filename,"a"); // open file to record data
+
 	if(disk_out==NULL) {
 		disk_out=stdout;
 		printf("couldn't open \"%s\" using stdout\n",filename);
 	}
 
-	fprintf(serial_out,"START\n");
+	fprintf(serial_out,"START\n"); // begin transaction
 	fflush(serial_out);
+
+	// Constantly read from serial input
 	while(fgets(buffer,100,serial_in)) {
 		// scan for float value
 		fdscan = sscanf(buffer,"\nThe power rail is approximately %f",&railv); 
 		if (fdscan < 0) {
 			printf("Couldn't receive data from serial port\n");
 			exit(errno);
+
 		}
 		printf("%s - %f\n",buffer,railv);
 		fflush(stdout);
 		memset(buffer,0,100);
+
 		sprintf(strfloat, "%.4f\n", railv); // convert float to string
 		fputs(strfloat,disk_out); // write float to file
 		fflush(disk_out); // flush output, prepare for next input
