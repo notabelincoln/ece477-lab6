@@ -22,21 +22,19 @@ void update_clock_speed(void);
 int main()
 {
 	char buffer[100] = "no string yet";
+	unsigned int railv;
+	unsigned int t;
 	update_clock_speed();  //adjust OSCCAL
 	init_serial(); 
 	init_adc();
 	_delay_ms(1000); //let serial work itself out
-	DDRB |= 1<<DDB0;
 	while(strncmp("START",&buffer[0],strlen("START")))
 		fgets(buffer,100,stdin);
-	PORTB |= 1<<PB0;
 	while(1) //raspberry pi controls reset line
 	{
-		PORTB |= 1<<PB0;
-		printf("%u\r\n",(1.1*1023/read_adc()));
-		_delay_ms(500);
-		PORTB &= ~(1<<PB0);
-		_delay_ms(500);
+		railv = (1.1*1023*10000)/read_adc();
+		printf("The power rail is approximately %u\.%u\n\r",railv/10000,railv%10000);
+		_delay_ms(1000);
 	}    
 }
 
