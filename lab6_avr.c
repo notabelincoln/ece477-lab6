@@ -29,22 +29,32 @@ int main()
 	init_serial(); 
 	init_adc();
 	_delay_ms(1000); //let serial work itself out
-	while(strncmp("START",&buffer[0],strlen("START"))!=0) {
+	DDRB |= 1<<PB0;
+	ts_enable = 0;
+	while(strncmp("START",&buffer[0],strlen("START"))) {
 		fgets(buffer,100,stdin);
 		sscanf(buffer,"START %u\n",&ts_enable);
 	}
-	ts = 0;
+	PORTB |= 1<<PB0;
 	// Configure timer
 	while(1) //raspberry pi controls reset line
 	{
 		railv = (1.1*1023*10000)/read_adc();
-		printf("The power rail");
+
 		// determine whether to provide timestamps
-		if (ts_enable)
-			printf(" at %u s",ts);
-		printf(" is approximately %u\.%uV\n\r",railv/10000,railv%10000);
-		_delay_ms(1000);
-		ts++;
+		if (!ts_enable) {
+			printf("The power rail is approximately %u\.%uV\n\r",
+					railv/10000,railv%10000);
+		} else {
+			printf("The power rail at %u s is approximately %u\.%uV\n\r",
+					ts,railv/10000,railv%10000);
+		}
+		PORTB &= ~(1<<PB0);
+		_delay_ms(500);
+		PORTB |= 1<<PB0;
+		_delay_ms(500);
+		if(ts_enable)
+			ts++;
 	}    
 }
 

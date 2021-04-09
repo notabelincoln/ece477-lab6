@@ -2,6 +2,7 @@
 CC = gcc
 CFLAGS = -g -O2 -Wall
 AVRFLAGS = -O3
+AVRTARGET = lab6_avr.c
 
 all:	avr rpi
 
@@ -27,8 +28,8 @@ fuse: avrdude_gpio.conf
 eeprom:
 	avrdude -C ./avrdude_gpio.conf -c pi_1 -p m88p -U eeprom:w:0x04,0x01:m
 
-lab6_avr: lab6_avr.c
-	avr-gcc -mmcu=atmega88pa $(AVRFLAGS) lab6_avr.c -o lab6_avr
+lab6_avr: $(AVRTARGET)
+	avr-gcc -mmcu=atmega88pa $(AVRFLAGS) $(AVRTARGET) -o lab6_avr
 
 lab6_avr.hex: lab6_avr
 	avr-objcopy -j .text -j .data -O ihex lab6_avr lab6_avr.hex
