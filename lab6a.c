@@ -26,13 +26,13 @@ int main(int argc, char * argv[])
 		printf("couldn't open %s using stdout\n",argv[1]);
 	}
 
-	printf("bonk\n");
 	fprintf(serial_out,"START\n");
 	fflush(serial_out);
-	printf("bonk2\n");
 	while(fgets(buffer,100,serial_in)) {
 		fputs(buffer,disk_out);
-		fprintf(stdout,"%s",buffer);
+		fflush(disk_out);
+		printf("%s",buffer);
+		fflush(stdout);
 	}
 }
 
