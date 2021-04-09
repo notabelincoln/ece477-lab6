@@ -14,7 +14,7 @@ int main(int argc, char * argv[])
 	FILE *serial_in;
 	FILE *disk_out;
 	int fdserial, fdscan;
-	int i;
+	unsigned int i, ts;
 	float railv;
 	char buffer[100];
 	char strfloat[16];
@@ -45,13 +45,14 @@ int main(int argc, char * argv[])
 		printf("couldn't open \"%s\" using stdout\n",filename);
 	}
 
-	fprintf(serial_out,"START\n"); // begin transaction
+	fprintf(serial_out,"START 1\n"); // begin transaction
 	fflush(serial_out);
 
 	// Constantly read from serial input
 	while(fgets(buffer,100,serial_in)) {
 		// scan for float value
-		fdscan = sscanf(buffer,"\nThe power rail is approximately %fV",&railv); 
+		fdscan = sscanf(buffer,"\nThe power rail at %u s is approximately %fV",
+				&ts,&railv); 
 		if (fdscan < 0) {
 			printf("Couldn't receive data from serial port\n");
 			exit(errno);
@@ -59,12 +60,12 @@ int main(int argc, char * argv[])
 		}
 
 		if (debug) {
-			printf("%s - %f\n",buffer,railv);
+			printf("%s - %u %f\n",buffer,ts,railv);
 			fflush(stdout);
 		}
 		memset(buffer,0,100);
 
-		sprintf(strfloat, "%.4f\n", railv); // convert float to string
+		sprintf(strfloat, "%u,%.4f\n",ts,railv); // convert float to string
 		fputs(strfloat,disk_out); // write float to file
 		fflush(disk_out); // flush output, prepare for next input
 	}
