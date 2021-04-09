@@ -1,0 +1,4 @@
+Run "sudo make all" to flash the board and compile the c code
+Run "make fuse" to set the fuses correctly on the avr
+Run "make rpi" to compile all c code to be run on the pi
+Run "make avr" to compile and flash all code to be run on the avr
