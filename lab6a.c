@@ -34,7 +34,7 @@ int main(int argc, char * argv[])
 	fflush(serial_out);
 	while(fgets(buffer,100,serial_in)) {
 		// scan for float value
-		fdscan = sscanf(buffer,"The power rail is approximately %f",&railv); 
+		fdscan = sscanf(buffer,"\nThe power rail is approximately %f",&railv); 
 		if (fdscan < 0) {
 			printf("Couldn't receive data from serial port\n");
 			exit(errno);
