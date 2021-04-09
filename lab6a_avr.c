@@ -28,8 +28,13 @@ int main()
 	init_serial(); 
 	init_adc();
 	_delay_ms(1000); //let serial work itself out
-	while(strncmp("START",&buffer[0],strlen("START")))
+	while(strncmp("START",&buffer[0],strlen("START"))!=0) {
 		fgets(buffer,100,stdin);
+	}
+
+	// Configure timer
+	if ((t > 0xFFFF) || (t <= 0))
+		t = 1000;
 	while(1) //raspberry pi controls reset line
 	{
 		railv = (1.1*1023*10000)/read_adc();
