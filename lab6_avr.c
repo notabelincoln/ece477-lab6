@@ -21,18 +21,22 @@ void update_clock_speed(void);
 
 int main()
 {
-	char buffer[100]="notStart";
+	char buffer[100] = "no string yet";
 	update_clock_speed();  //adjust OSCCAL
 	init_serial(); 
 	init_adc();
 	_delay_ms(1000); //let serial work itself out
 	DDRB |= 1<<DDB0;
+	while(strncmp("START",&buffer[0],strlen("START")))
+		fgets(buffer,100,stdin);
 	PORTB |= 1<<PB0;
-	while(strncmp("START",buffer,strlen("START"))!=0) fgets(buffer,100,stdin);
-	PORTB &= ~(1<<PB0);
 	while(1) //raspberry pi controls reset line
 	{
-		fprintf(stdout,"The power rail is approximately %d\n",read_adc());
+		PORTB |= 1<<PB0;
+		printf("%u\r\n",(1.1*1023/read_adc()));
+		_delay_ms(500);
+		PORTB &= ~(1<<PB0);
+		_delay_ms(500);
 	}    
 }
 
@@ -94,7 +98,7 @@ int serial_getchar(FILE *fp)
 }     
 void init_adc(void)
 {
-	ADMUX = (3<<REFS0) | 8; //temperature sensor 1.1V ref
+	ADMUX = (1<<REFS0) | 14; //AVCC reference and 1.1 bandgap measurement
 	ADCSRA = (1<<ADEN) | (3<<ADPS0); // enable ADC, prescaler=64
 	ADCSRB = 0;
 	DIDR0 = 0;
