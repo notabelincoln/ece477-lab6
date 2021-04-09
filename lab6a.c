@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 
 int init(void);
 
@@ -12,8 +13,10 @@ int main(int argc, char * argv[])
 	FILE *serial_out;
 	FILE *serial_in;
 	FILE *disk_out;
-	int fdserial;
+	int fdserial, fdscan;
+	float railv;
 	char buffer[100];
+	char strfloat[16];
 	char *filename = "./rail_voltages.dat";
 
 	fdserial=init();
@@ -24,16 +27,24 @@ int main(int argc, char * argv[])
 	disk_out=fopen(filename,"a");
 	if(disk_out==NULL) {
 		disk_out=stdout;
-		printf("couldn't open \"%\" using stdout\n",filename);
+		printf("couldn't open \"%s\" using stdout\n",filename);
 	}
 
 	fprintf(serial_out,"START\n");
 	fflush(serial_out);
 	while(fgets(buffer,100,serial_in)) {
-		fputs(buffer,disk_out);
-		fflush(disk_out);
-		printf("%s",buffer);
+		// scan for float value
+		fdscan = sscanf(buffer,"The power rail is approximately %f",&railv); 
+		if (fdscan < 0) {
+			printf("Couldn't receive data from serial port\n");
+			exit(errno);
+		}
+		printf("%s - %f\n",buffer,railv);
 		fflush(stdout);
+		memset(buffer,0,100);
+		sprintf(strfloat, "%.4f\n", railv); // convert float to string
+		fputs(strfloat,disk_out); // write float to file
+		fflush(disk_out); // flush output, prepare for next input
 	}
 }
 
