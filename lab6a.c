@@ -11,19 +11,20 @@ int main(int argc, char * argv[])
 {
 	FILE *serial_out;
 	FILE *serial_in;
-	FILE *disk_out=NULL;
+	FILE *disk_out;
 	int fdserial;
 	char buffer[100];
+	char *filename = "./rail_voltages.dat";
 
 	fdserial=init();
 	if(fdserial <1) exit(0);
 	serial_out=fdopen(fdserial,"w");
 	serial_in=fdopen(fdserial,"r");
 	if(serial_out==NULL || serial_in==NULL) printf("fdopen failed \n"),exit(0);
-	if(argc>1) disk_out=fopen(argv[1],"a");
+	disk_out=fopen(filename,"a");
 	if(disk_out==NULL) {
 		disk_out=stdout;
-		printf("couldn't open %s using stdout\n",argv[1]);
+		printf("couldn't open \"%\" using stdout\n",filename);
 	}
 
 	fprintf(serial_out,"START\n");
